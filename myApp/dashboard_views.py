@@ -1098,6 +1098,7 @@ def dashboard_add_course(request):
             # Store in session so floating widget can poll (no success message - widget shows progress)
             request.session['ai_generating_course_id'] = course.id
             request.session['ai_generating_course_name'] = course.name
+            request.session.modified = True
             # Initial progress before thread starts
             _update_ai_gen_progress(course.id, course.name, 'starting', progress=0, current='Starting...')
             thread = threading.Thread(
