@@ -188,6 +188,55 @@
     <form method="POST" id="ai-content-form">
         {% csrf_token %}
         
+        <!-- Video Section - Add or edit lesson video -->
+        <div class="bg-[#0a0e27]/60 backdrop-blur-sm border border-cyan-electric/10 rounded-xl p-6 mb-6">
+            <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                <i class="fas fa-video text-cyan-electric"></i>
+                Lesson Video
+            </h3>
+            <p class="text-sm text-gray-400 mb-4">Add a video for this lesson. Students will see the first non-empty option (Vimeo, Google Drive, or generic URL).</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Vimeo URL</label>
+                    <input type="url" name="vimeo_url" id="vimeo-url-input" value="{{ lesson.vimeo_url }}"
+                        placeholder="https://vimeo.com/123456789"
+                        class="w-full bg-[#0a0e27]/40 border border-cyan-electric/20 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-cyan-electric/50">
+                    <input type="hidden" name="vimeo_thumbnail" id="vimeo-thumbnail" value="{{ lesson.vimeo_thumbnail }}">
+                    <input type="hidden" name="vimeo_duration_seconds" id="vimeo-duration-seconds" value="{{ lesson.vimeo_duration_seconds }}">
+                    <button type="button" id="verify-vimeo-btn" class="mt-2 px-3 py-1 bg-cyan-electric/10 border border-cyan-electric/30 rounded text-xs hover:bg-cyan-electric/20 cursor-pointer">Verify & Fetch Metadata</button>
+                    <span id="vimeo-verify-status" class="ml-2 text-sm"></span>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Google Drive Embed URL</label>
+                    <input type="url" name="google_drive_url" value="{{ lesson.google_drive_url }}"
+                        placeholder="https://drive.google.com/file/d/.../preview"
+                        class="w-full bg-[#0a0e27]/40 border border-cyan-electric/20 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-cyan-electric/50">
+                    <p class="text-xs text-gray-500 mt-1">Use Share → Embed link for the video</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Generic Video URL (YouTube, etc.)</label>
+                    <input type="url" name="video_url" value="{{ lesson.video_url }}"
+                        placeholder="https://www.youtube.com/embed/VIDEO_ID or youtube.com/watch?v=..."
+                        class="w-full bg-[#0a0e27]/40 border border-cyan-electric/20 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-cyan-electric/50">
+                    <p class="text-xs text-gray-500 mt-1">Use embed URL (youtube.com/embed/...) or paste watch URL — both work</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Workbook URL</label>
+                        <input type="url" name="workbook_url" value="{{ lesson.workbook_url }}"
+                            placeholder="https://..."
+                            class="w-full bg-[#0a0e27]/40 border border-cyan-electric/20 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-cyan-electric/50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Resources URL</label>
+                        <input type="url" name="resources_url" value="{{ lesson.resources_url }}"
+                            placeholder="https://..."
+                            class="w-full bg-[#0a0e27]/40 border border-cyan-electric/20 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-cyan-electric/50">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- AI Generated Content Sections -->
         <div class="space-y-6">
             <!-- 1. Clean Lesson Title -->
@@ -288,17 +337,64 @@
             <div class="bg-[#0a0e27]/60 backdrop-blur-sm border border-cyan-electric/10 rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-bold">5. Recommended AI Coach Actions</h3>
+                    <button type="button" class="edit-field-btn px-3 py-1 bg-cyan-electric/10 border border-cyan-electric/30 rounded-full text-xs font-medium hover:bg-cyan-electric/20 transition-all" data-field="coach_actions">
+                        <i class="fas fa-edit mr-1"></i> Edit
+                    </button>
                 </div>
-                <div class="space-y-2">
-                    {% if lesson.get_coach_actions_list %}
-                        {% for action in lesson.get_coach_actions_list %}
-                        <div class="px-4 py-2 bg-cyan-electric/10 border border-cyan-electric/20 rounded-lg text-sm">
-                            {{ action }}
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-gray-400">AI coach actions will appear here...</p>
-                    {% endif %}
+                <div class="space-y-3">
+                    <div id="coach-actions-display">
+                        {% if lesson.get_coach_actions_list %}
+                            {% for action in lesson.get_coach_actions_list %}
+                            <div class="px-4 py-2 bg-cyan-electric/10 border border-cyan-electric/20 rounded-lg text-sm">
+                                {{ action }}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-400">AI coach actions will appear here...</p>
+                        {% endif %}
+                    </div>
+                    <textarea 
+                        name="coach_actions" 
+                        id="coach-actions-input"
+                        rows="6"
+                        placeholder="One action per line"
+                        class="hidden w-full bg-[#0a0e27]/40 border border-cyan-electric/20 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-cyan-electric/50 resize-none"
+                    >{% for action in lesson.get_coach_actions_list %}{{ action }}
+{% endfor %}</textarea>
+                </div>
+            </div>
+
+            <!-- 6. Lesson Notes (Content Blocks) -->
+            <div class="bg-[#0a0e27]/60 backdrop-blur-sm border border-cyan-electric/10 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">6. Lesson Notes</h3>
+                    <button type="button" class="edit-field-btn px-3 py-1 bg-cyan-electric/10 border border-cyan-electric/30 rounded-full text-xs font-medium hover:bg-cyan-electric/20 transition-all" data-field="content_blocks">
+                        <i class="fas fa-edit mr-1"></i> Edit
+                    </button>
+                </div>
+                <p class="text-sm text-gray-400 mb-4">Structured content shown to students (paragraphs, headers, lists, quotes). JSON format with blocks.</p>
+                <div class="space-y-3">
+                    <div id="content-blocks-display" class="text-gray-300 text-sm max-h-48 overflow-y-auto">
+                        {% if lesson.content and lesson.content.blocks %}
+                            {% for block in lesson.content.blocks %}
+                                {% if block.type == 'paragraph' %}<p class="mb-2">{{ block.data.text|truncatewords:30 }}</p>
+                                {% elif block.type == 'header' %}<p class="font-semibold mb-1">Header: {{ block.data.text }}</p>
+                                {% elif block.type == 'list' %}<p class="mb-1">List: {{ block.data.items|length }} items</p>
+                                {% elif block.type == 'quote' %}<p class="italic mb-1">Quote: {{ block.data.text|truncatewords:15 }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-500 italic">No lesson notes yet. Add content in Edit mode or regenerate AI content.</p>
+                        {% endif %}
+                    </div>
+                    <textarea 
+                        name="content_blocks" 
+                        id="content-blocks-input"
+                        rows="12"
+                        placeholder='{"blocks": [{"type": "paragraph", "data": {"text": "..."}}, {"type": "header", "data": {"level": 2, "text": "..."}}]}'
+                        class="hidden w-full bg-[#0a0e27]/40 border border-cyan-electric/20 rounded-lg px-4 py-2 text-sm font-mono focus:outline-none focus:border-cyan-electric/50 resize-none"
+                    ></textarea>
+                    {{ content_data|json_script:"content-blocks-data" }}
                 </div>
             </div>
         </div>
@@ -473,6 +569,18 @@
     // Wait for DOM to be fully loaded
     function initChatbotButtons() {
         console.log('Initializing chatbot buttons...');
+        // Populate content blocks textarea from json_script
+        const contentDataEl = document.getElementById('content-blocks-data');
+        const contentInput = document.getElementById('content-blocks-input');
+        if (contentDataEl && contentInput) {
+            try {
+                const data = JSON.parse(contentDataEl.textContent);
+                contentInput.value = JSON.stringify(data, null, 2);
+            } catch (e) {
+                contentInput.value = '{"blocks": []}';
+            }
+        }
+        
         // Edit field functionality
         document.querySelectorAll('.edit-field-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -824,6 +932,44 @@
         handleUploadTranscript: typeof window.handleUploadTranscript,
         handleTrainChatbot: typeof window.handleTrainChatbot
     });
+    
+    // Vimeo Verify button
+    const verifyVimeoBtn = document.getElementById('verify-vimeo-btn');
+    const vimeoStatus = document.getElementById('vimeo-verify-status');
+    if (verifyVimeoBtn) {
+        verifyVimeoBtn.addEventListener('click', function() {
+            const urlInput = document.getElementById('vimeo-url-input');
+            const url = urlInput ? urlInput.value.trim() : '';
+            if (!url) {
+                if (vimeoStatus) vimeoStatus.textContent = 'Please enter a Vimeo URL first';
+                return;
+            }
+            if (vimeoStatus) vimeoStatus.textContent = 'Verifying...';
+            verifyVimeoBtn.disabled = true;
+            fetch('{% url "verify_vimeo_url" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: 'vimeo_url=' + encodeURIComponent(url)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('vimeo-thumbnail').value = data.thumbnail || '';
+                    document.getElementById('vimeo-duration-seconds').value = data.duration || 0;
+                    if (vimeoStatus) vimeoStatus.textContent = '✓ Verified: ' + (data.duration_formatted || '');
+                } else {
+                    if (vimeoStatus) vimeoStatus.textContent = 'Error: ' + (data.error || 'Could not verify');
+                }
+            })
+            .catch(() => {
+                if (vimeoStatus) vimeoStatus.textContent = 'Error: Request failed';
+            })
+            .finally(() => { verifyVimeoBtn.disabled = false; });
+        });
+    }
 </script>
 {% endblock %}
 

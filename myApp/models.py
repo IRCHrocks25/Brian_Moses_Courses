@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 import json
+import re
 
 
 class Course(models.Model):
@@ -217,6 +218,18 @@ class Lesson(models.Model):
         if self.vimeo_id:
             return f"https://player.vimeo.com/video/{self.vimeo_id}"
         return ""
+    
+    def get_video_embed_url(self):
+        """Convert video_url to embed format. YouTube watch/short URLs must use embed format for iframes."""
+        url = (self.video_url or '').strip()
+        if not url:
+            return ''
+        # YouTube: watch URL or youtu.be short URL -> embed
+        yt_watch = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})', url)
+        if yt_watch:
+            return f"https://www.youtube.com/embed/{yt_watch.group(1)}"
+        # Already embed or other URL - use as-is
+        return url
     
     def get_formatted_duration(self):
         """Format duration in MM:SS format"""

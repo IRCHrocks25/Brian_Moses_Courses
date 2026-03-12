@@ -630,6 +630,40 @@ def add_lesson(request, course_slug):
     })
 
 
+def _save_lesson_media_and_content(lesson, request):
+    """Save video URLs, workbook, resources, and content blocks from POST."""
+    lesson.vimeo_url = request.POST.get('vimeo_url', lesson.vimeo_url) or ''
+    lesson.google_drive_url = request.POST.get('google_drive_url', lesson.google_drive_url) or ''
+    lesson.video_url = request.POST.get('video_url', lesson.video_url) or ''
+    lesson.workbook_url = request.POST.get('workbook_url', lesson.workbook_url) or ''
+    lesson.resources_url = request.POST.get('resources_url', lesson.resources_url) or ''
+    # Vimeo: extract ID, use metadata from Verify button if provided
+    if lesson.vimeo_url:
+        vimeo_id = extract_vimeo_id(lesson.vimeo_url)
+        if vimeo_id:
+            lesson.vimeo_id = vimeo_id
+    thumb = request.POST.get('vimeo_thumbnail')
+    if thumb:
+        lesson.vimeo_thumbnail = thumb
+    dur = request.POST.get('vimeo_duration_seconds')
+    if dur:
+        try:
+            lesson.vimeo_duration_seconds = int(dur)
+        except (ValueError, TypeError):
+            pass
+    # Parse content blocks
+    content_raw = request.POST.get('content_blocks', '')
+    if content_raw:
+        try:
+            content_data = json.loads(content_raw)
+            if isinstance(content_data, dict) and 'blocks' in content_data:
+                lesson.content = content_data
+            elif isinstance(content_data, list):
+                lesson.content = {'blocks': content_data}
+        except json.JSONDecodeError:
+            pass
+
+
 @staff_member_required
 def generate_lesson_ai(request, course_slug, lesson_id):
     """Generate AI content for lesson"""
@@ -652,6 +686,8 @@ def generate_lesson_ai(request, course_slug, lesson_id):
             lesson.save()
             
         elif action == 'approve':
+            # Save video & links from form (in case not saved via Edit first)
+            _save_lesson_media_and_content(lesson, request)
             # Approve and finalize lesson
             lesson.title = lesson.ai_clean_title or lesson.working_title
             lesson.description = lesson.ai_full_description
@@ -672,11 +708,23 @@ def generate_lesson_ai(request, course_slug, lesson_id):
             if outcomes_text:
                 lesson.ai_outcomes = [o.strip() for o in outcomes_text.split('\n') if o.strip()]
             
+            # Parse coach actions
+            coach_text = request.POST.get('coach_actions', '')
+            if coach_text:
+                lesson.ai_coach_actions = [a.strip() for a in coach_text.split('\n') if a.strip()]
+            
+            _save_lesson_media_and_content(lesson, request)
             lesson.save()
+    
+    # Content for JSON textarea (pass dict for json_script)
+    content_data = lesson.content if (lesson.content and isinstance(lesson.content, dict)) else {'blocks': []}
+    if 'blocks' not in content_data:
+        content_data = {'blocks': []}
     
     return render(request, 'creator/generate_lesson_ai.html', {
         'course': course,
         'lesson': lesson,
+        'content_data': content_data,
     })
 
 
