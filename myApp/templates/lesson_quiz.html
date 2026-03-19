@@ -67,16 +67,21 @@
                     </div>
                     
                     {% if result.passed and next_lesson %}
-                    <div class="mt-6 pt-6 border-t {% if result.passed %}border-green-500/30{% else %}border-yellow-500/30{% endif %}">
-                        <a 
-                            href="{% url 'lesson_detail' course.slug next_lesson.slug %}" 
-                            id="next-lesson-btn"
-                            class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-cyan-electric to-purple-accent hover:from-cyan-electric/90 hover:to-purple-accent/90 text-[#0a0e27] font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg"
-                            onclick="this.classList.add('opacity-50', 'cursor-wait'); this.querySelector('span').textContent = 'Loading...';"
-                        >
-                            <span>Continue to Next Lesson</span>
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
+                    <div class="mt-6 pt-6 border-t border-green-500/30">
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <a 
+                                href="{% url 'lesson_detail' course.slug next_lesson.slug %}" 
+                                id="next-lesson-btn"
+                                class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-cyan-electric to-purple-accent hover:from-cyan-electric/90 hover:to-purple-accent/90 text-[#0a0e27] font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                            >
+                                <span>Continue to Next Lesson</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                            <span id="auto-redirect-notice" class="text-sm text-gray-400">
+                                Auto-continuing in <span id="countdown-timer" class="text-cyan-electric font-semibold">5</span>s...
+                                <button onclick="clearInterval(window._autoRedirectInterval); document.getElementById('auto-redirect-notice').textContent='Auto-redirect cancelled';" class="ml-2 text-gray-500 hover:text-white underline text-xs">Cancel</button>
+                            </span>
+                        </div>
                     </div>
                     {% endif %}
                 </div>
@@ -228,7 +233,24 @@
         }, 3000);
     })();
     
-    // Removed auto-redirect - let user click manually to avoid slow loading issues
+    // Auto-redirect to next lesson after countdown
+    (function() {
+        const nextBtn = document.getElementById('next-lesson-btn');
+        const countdownEl = document.getElementById('countdown-timer');
+        if (!nextBtn || !countdownEl) return;
+
+        let seconds = 5;
+        window._autoRedirectInterval = setInterval(function() {
+            seconds--;
+            countdownEl.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(window._autoRedirectInterval);
+                nextBtn.classList.add('opacity-50', 'cursor-wait');
+                nextBtn.querySelector('span').textContent = 'Loading...';
+                window.location.href = nextBtn.href;
+            }
+        }, 1000);
+    })();
 </script>
 {% endif %}
 

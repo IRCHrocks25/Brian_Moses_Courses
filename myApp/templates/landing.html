@@ -90,7 +90,8 @@
   /* HERO */
   .hero {
     position: relative; min-height: 100vh;
-    display: grid; grid-template-columns: 1fr 1fr;
+    display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 460px);
+    gap: 48px; justify-content: center;
     align-items: center; padding: 0 60px;
     overflow: hidden;
   }
@@ -104,11 +105,11 @@
     background: linear-gradient(105deg, rgba(5,8,15,0.97) 45%, rgba(5,8,15,0.55) 100%);
   }
   .hero-left { position: relative; z-index: 1; padding-top: 80px; }
-  .hero-right { position: relative; z-index: 1; display: flex; justify-content: flex-end; }
+  .hero-right { position: relative; z-index: 1; display: flex; justify-content: center; }
 
   .hero-eyebrow { margin-bottom: 22px; animation: fadeUp 0.7s 0s ease both; }
   .hero h1 {
-    font-size: clamp(68px, 9vw, 116px);
+    font-size: clamp(56px, 7vw, 92px);
     margin-bottom: 24px;
     animation: fadeUp 0.7s 0.1s ease both;
   }
@@ -131,7 +132,7 @@
   /* Hero course card */
   .hero-card {
     background: var(--mid); border: 1px solid var(--blue-border);
-    padding: 36px; width: 400px; position: relative;
+    padding: 36px; width: 100%; max-width: 430px; position: relative;
     animation: fadeUp 0.7s 0.25s ease both;
   }
   .hero-card::before {
